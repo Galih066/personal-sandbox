@@ -292,14 +292,6 @@
 					</svg>
 					<span class="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-indigo-500"></span>
 				</button>
-
-				<!-- Avatar -->
-				<div
-					class="flex h-9 w-9 cursor-pointer items-center justify-center rounded-full text-xs font-bold text-white"
-					style="background: linear-gradient(135deg, #6366f1, #8b5cf6);"
-				>
-					G
-				</div>
 			</div>
 		</header>
 
