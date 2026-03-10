@@ -1,12 +1,10 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { PUBLIC_API_BASE_URL, PUBLIC_SESSION_KEY } from '$env/static/public';
+	import { PUBLIC_API_BASE_URL, PUBLIC_EMAIL, PUBLIC_SESSION_KEY } from '$env/static/public';
 
-	// ── CONFIG ──────────────────────────────────────────────
-	const EMAIL = 'galihdapaimanda@gmail.com';
+	const EMAIL = PUBLIC_EMAIL;
 	const LOGIN_URL = `${PUBLIC_API_BASE_URL}/api/auth/login`;
 	const SESSION_KEY = PUBLIC_SESSION_KEY;
-	// ────────────────────────────────────────────────────────
 
 	let digits = $state<string[]>(Array(6).fill(''));
 	let inputRefs: HTMLInputElement[] = [];
@@ -18,9 +16,7 @@
 	let errorMsg = $state('');
 
 	onMount(() => {
-		if (sessionStorage.getItem(SESSION_KEY) === 'true') {
-			isAuthenticated = true;
-		}
+		if (sessionStorage.getItem(SESSION_KEY) === 'true') isAuthenticated = true;
 		mounted = true;
 		setTimeout(() => inputRefs[0]?.focus(), 100);
 	});
@@ -31,12 +27,8 @@
 		digits[index] = filtered;
 		(e.target as HTMLInputElement).value = filtered;
 
-		if (filtered && index < 5) {
-			inputRefs[index + 1]?.focus();
-		}
-		if (digits.every((d) => d !== '')) {
-			submitPin();
-		}
+		if (filtered && index < 5) inputRefs[index + 1]?.focus();
+		if (digits.every((d) => d !== '')) submitPin();
 	}
 
 	function handleKeyDown(index: number, e: KeyboardEvent) {
@@ -51,14 +43,9 @@
 	function handlePaste(e: ClipboardEvent) {
 		e.preventDefault();
 		const pasted = e.clipboardData?.getData('text').replace(/\D/g, '').slice(0, 6) ?? '';
-		for (let i = 0; i < 6; i++) {
-			digits[i] = pasted[i] ?? '';
-		}
-		if (pasted.length === 6) {
-			submitPin();
-		} else {
-			inputRefs[Math.min(pasted.length, 5)]?.focus();
-		}
+		for (let i = 0; i < 6; i++) digits[i] = pasted[i] ?? '';
+		if (pasted.length === 6) submitPin();
+		else inputRefs[Math.min(pasted.length, 5)]?.focus();
 	}
 
 	async function submitPin() {
@@ -78,15 +65,11 @@
 			const data = await res.json();
 
 			if (res.ok) {
-				// Store token if returned by the API
 				if (data?.token) sessionStorage.setItem('psb_token', data.token);
 				if (data?.data?.token) sessionStorage.setItem('psb_token', data.data.token);
-
 				sessionStorage.setItem(SESSION_KEY, 'true');
 				success = true;
-				setTimeout(() => {
-					isAuthenticated = true;
-				}, 800);
+				setTimeout(() => (isAuthenticated = true), 800);
 			} else {
 				triggerError(data?.message ?? 'Incorrect PIN, try again');
 			}
@@ -112,33 +95,64 @@
 {#if !mounted}
 	<!-- prevent flash -->
 {:else if isAuthenticated}
-	<div class="authenticated">
-		<div class="auth-content">
-			<div class="checkmark">✓</div>
-			<h1>Welcome back, sir!</h1>
-			<p class="sub">You're in. The sandbox is yours.</p>
-			<a href="/dashboard" class="btn-enter">Enter ↗</a>
+	<!-- ── Authenticated ───────────────────────────── -->
+	<div
+		class="flex min-h-screen items-center justify-center bg-[#090c14]"
+		style="font-family: 'Inter', system-ui, sans-serif;"
+	>
+		<div class="text-center" style="animation: fadein 0.5s ease;">
+			<div
+				class="mb-4 text-5xl text-green-400"
+				style="animation: pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);"
+			>
+				✓
+			</div>
+			<h1 class="mb-2 text-[2rem] font-bold tracking-tight text-slate-100">Welcome back, sir!</h1>
+			<p class="mb-8 text-[0.9375rem] text-slate-500">You're in. The sandbox is yours.</p>
+			<a
+				href="/dashboard"
+				class="inline-block rounded-xl px-8 py-3 text-[0.9375rem] font-semibold text-white no-underline transition-all duration-150 hover:-translate-y-0.5"
+				style="background: linear-gradient(135deg, #6366f1, #8b5cf6); box-shadow: 0 8px 24px rgba(99,102,241,0.4);"
+				>Enter ↗</a
+			>
 		</div>
 	</div>
 {:else}
-	<div class="page">
-		<!-- Animated background blobs -->
-		<div class="blob blob-1"></div>
-		<div class="blob blob-2"></div>
-		<div class="blob blob-3"></div>
+	<!-- ── Login page ───────────────────────────────── -->
+	<div
+		class="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-[#090c14]"
+		style="font-family: 'Inter', system-ui, sans-serif;"
+	>
+		<!-- Background blobs -->
+		<div
+			class="pointer-events-none absolute h-[400px] w-[400px] rounded-full opacity-[0.18]"
+			style="filter: blur(80px); background: radial-gradient(circle, #6366f1, #4f46e5); top: -120px; left: -100px; animation: float 8s ease-in-out infinite alternate;"
+		></div>
+		<div
+			class="pointer-events-none absolute h-[350px] w-[350px] rounded-full opacity-[0.18]"
+			style="filter: blur(80px); background: radial-gradient(circle, #8b5cf6, #7c3aed); bottom: -100px; right: -80px; animation: float 8s ease-in-out -3s infinite alternate;"
+		></div>
+		<div
+			class="pointer-events-none absolute h-[250px] w-[250px] rounded-full opacity-[0.18]"
+			style="filter: blur(80px); background: radial-gradient(circle, #06b6d4, #0284c7); top: 50%; left: 60%; animation: float 8s ease-in-out -6s infinite alternate;"
+		></div>
 
-		<div class="card" class:shaking>
-			<div class="card-inner">
+		<!-- Card -->
+		<div
+			class="relative z-10 w-[min(480px,calc(100vw-32px))] border border-white/10 bg-white/[0.04] backdrop-blur-xl"
+			class:shaking
+			style="border-radius: 24px; box-shadow: 0 0 0 1px rgba(255,255,255,0.05), 0 24px 64px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.08);"
+		>
+			<div class="px-10 pt-12 pb-10">
 				<!-- Header -->
-				<div class="header">
-					<div class="avatar" class:loading>
+				<div class="mb-10 text-center">
+					<div
+						class="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full text-white"
+						class:avatar-loading={loading}
+						style="background: linear-gradient(135deg, #6366f1, #8b5cf6); box-shadow: 0 0 0 4px rgba(99,102,241,0.2), 0 8px 24px rgba(99,102,241,0.4);"
+					>
 						{#if loading}
-							<svg
-								class="spinner"
-								viewBox="0 0 24 24"
-								fill="none"
-								xmlns="http://www.w3.org/2000/svg"
-							>
+							<svg class="spinner h-8 w-8" viewBox="0 0 24 24" fill="none">
 								<circle
 									cx="12"
 									cy="12"
@@ -155,7 +169,7 @@
 								/>
 							</svg>
 						{:else}
-							<svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+							<svg class="h-8 w-8" viewBox="0 0 40 40" fill="none">
 								<circle cx="20" cy="15" r="7" stroke="currentColor" stroke-width="2" />
 								<path
 									d="M6 36c0-7.732 6.268-14 14-14s14 6.268 14 14"
@@ -166,12 +180,16 @@
 							</svg>
 						{/if}
 					</div>
-					<h1 class="title">Welcome back, sir!</h1>
-					<p class="subtitle">Enter your 6-digit PIN to access your personal space.</p>
+					<h1 class="mb-2.5 text-[1.75rem] leading-tight font-bold tracking-tight text-slate-100">
+						Welcome back, sir!
+					</h1>
+					<p class="text-sm leading-relaxed text-slate-400">
+						Enter your 6-digit PIN to access your personal space.
+					</p>
 				</div>
 
-				<!-- PIN Input -->
-				<div class="pin-wrap" class:success>
+				<!-- PIN boxes -->
+				<div class="mb-5 flex justify-center gap-2.5">
 					{#each digits as digit, i}
 						<input
 							bind:this={inputRefs[i]}
@@ -180,9 +198,12 @@
 							pattern="[0-9]*"
 							maxlength="1"
 							value={digit}
-							class="pin-box"
-							class:filled={digit !== ''}
-							class:success
+							class="pin-box h-16 w-14 text-center text-2xl font-bold transition-all duration-200 outline-none disabled:cursor-not-allowed disabled:opacity-50
+								{success
+								? 'border-green-500 text-green-400'
+								: digit !== ''
+									? 'pin-box--filled text-slate-100'
+									: 'text-slate-100'}"
 							disabled={loading}
 							aria-label={`Digit ${i + 1}`}
 							oninput={(e) => handleInput(i, e)}
@@ -193,75 +214,66 @@
 					{/each}
 				</div>
 
-				<p class="hint">
+				<!-- Hint -->
+				<p class="m-0 min-h-5 text-center text-[0.8125rem]">
 					{#if success}
-						<span class="hint-success">✓ Access granted</span>
+						<span class="text-green-400" style="animation: fadein 0.2s ease;">✓ Access granted</span
+						>
 					{:else if loading}
-						<span class="hint-loading">Verifying…</span>
+						<span class="text-indigo-400">Verifying…</span>
 					{:else if shaking}
-						<span class="hint-error">✗ {errorMsg}</span>
+						<span class="text-red-400" style="animation: fadein 0.2s ease;">✗ {errorMsg}</span>
 					{:else}
-						<span class="hint-neutral">Private access only</span>
+						<span class="text-slate-600">Private access only</span>
 					{/if}
 				</p>
 			</div>
 		</div>
 
-		<p class="footer-note">© Personal Sandbox · {new Date().getFullYear()}</p>
+		<p class="relative z-10 mt-7 text-xs tracking-widest text-slate-700">
+			© Personal Sandbox · {new Date().getFullYear()}
+		</p>
 	</div>
 {/if}
 
 <style>
-	/* ── Page ─────────────────────────────────────────── */
-	.page {
-		min-height: 100vh;
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		justify-content: center;
-		background: #090c14;
-		position: relative;
-		overflow: hidden;
-		font-family:
-			'Inter',
-			system-ui,
-			-apple-system,
-			sans-serif;
+	/* Only truly non-Tailwindable styles + keyframes live here */
+
+	.pin-box {
+		border: 1.5px solid rgba(255, 255, 255, 0.12);
+		background: rgba(255, 255, 255, 0.05);
+		border-radius: 14px;
+		caret-color: transparent;
+		-webkit-text-security: disc;
+		font-family: inherit;
+	}
+	.pin-box--filled {
+		border-color: rgba(99, 102, 241, 0.5);
+		background: rgba(99, 102, 241, 0.06);
+	}
+	.pin-box:focus:not(:disabled) {
+		border-color: #6366f1;
+		background: rgba(99, 102, 241, 0.08);
+		box-shadow:
+			0 0 0 3px rgba(99, 102, 241, 0.2),
+			0 4px 12px rgba(0, 0, 0, 0.3);
+		transform: translateY(-2px);
+	}
+	.pin-box.border-green-500 {
+		background: rgba(34, 197, 94, 0.1);
+		box-shadow: 0 0 12px rgba(34, 197, 94, 0.3);
 	}
 
-	/* ── Animated blobs ───────────────────────────────── */
-	.blob {
-		position: absolute;
-		border-radius: 50%;
-		filter: blur(80px);
-		opacity: 0.18;
-		animation: float 8s ease-in-out infinite alternate;
-		pointer-events: none;
+	.shaking {
+		animation: shake 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97);
 	}
-	.blob-1 {
-		width: 400px;
-		height: 400px;
-		background: radial-gradient(circle, #6366f1, #4f46e5);
-		top: -120px;
-		left: -100px;
-		animation-delay: 0s;
+	.avatar-loading {
+		animation: pulse-ring 1s ease infinite;
 	}
-	.blob-2 {
-		width: 350px;
-		height: 350px;
-		background: radial-gradient(circle, #8b5cf6, #7c3aed);
-		bottom: -100px;
-		right: -80px;
-		animation-delay: -3s;
+	.spinner {
+		animation: spin 0.8s linear infinite;
 	}
-	.blob-3 {
-		width: 250px;
-		height: 250px;
-		background: radial-gradient(circle, #06b6d4, #0284c7);
-		top: 50%;
-		left: 60%;
-		animation-delay: -6s;
-	}
+
 	@keyframes float {
 		from {
 			transform: translate(0, 0) scale(1);
@@ -269,25 +281,6 @@
 		to {
 			transform: translate(30px, -30px) scale(1.1);
 		}
-	}
-
-	/* ── Card ─────────────────────────────────────────── */
-	.card {
-		position: relative;
-		z-index: 10;
-		background: rgba(255, 255, 255, 0.04);
-		border: 1px solid rgba(255, 255, 255, 0.1);
-		backdrop-filter: blur(20px);
-		-webkit-backdrop-filter: blur(20px);
-		border-radius: 24px;
-		width: min(480px, calc(100vw - 32px));
-		box-shadow:
-			0 0 0 1px rgba(255, 255, 255, 0.05),
-			0 24px 64px rgba(0, 0, 0, 0.5),
-			inset 0 1px 0 rgba(255, 255, 255, 0.08);
-	}
-	.card.shaking {
-		animation: shake 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97);
 	}
 	@keyframes shake {
 		10%,
@@ -308,32 +301,25 @@
 			transform: translateX(8px);
 		}
 	}
-	.card-inner {
-		padding: 48px 40px 40px;
+	@keyframes fadein {
+		from {
+			opacity: 0;
+			transform: translateY(4px);
+		}
+		to {
+			opacity: 1;
+			transform: translateY(0);
+		}
 	}
-
-	/* ── Header ───────────────────────────────────────── */
-	.header {
-		text-align: center;
-		margin-bottom: 40px;
-	}
-	.avatar {
-		width: 64px;
-		height: 64px;
-		margin: 0 auto 20px;
-		background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
-		border-radius: 50%;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		color: white;
-		box-shadow:
-			0 0 0 4px rgba(99, 102, 241, 0.2),
-			0 8px 24px rgba(99, 102, 241, 0.4);
-		transition: transform 0.3s ease;
-	}
-	.avatar.loading {
-		animation: pulse-ring 1s ease infinite;
+	@keyframes pop {
+		from {
+			transform: scale(0);
+			opacity: 0;
+		}
+		to {
+			transform: scale(1);
+			opacity: 1;
+		}
 	}
 	@keyframes pulse-ring {
 		0% {
@@ -352,199 +338,17 @@
 				0 8px 24px rgba(99, 102, 241, 0.4);
 		}
 	}
-	.avatar svg {
-		width: 32px;
-		height: 32px;
-	}
-	.spinner {
-		animation: spin 0.8s linear infinite;
-	}
 	@keyframes spin {
 		to {
 			transform: rotate(360deg);
 		}
 	}
 
-	.title {
-		font-size: 1.75rem;
-		font-weight: 700;
-		color: #f1f5f9;
-		letter-spacing: -0.02em;
-		margin: 0 0 10px;
-		line-height: 1.2;
-	}
-	.subtitle {
-		font-size: 0.875rem;
-		color: #94a3b8;
-		margin: 0;
-		line-height: 1.6;
-	}
-
-	/* ── PIN boxes ────────────────────────────────────── */
-	.pin-wrap {
-		display: flex;
-		gap: 10px;
-		justify-content: center;
-		margin-bottom: 20px;
-	}
-	.pin-wrap.success .pin-box {
-		border-color: #22c55e;
-		background: rgba(34, 197, 94, 0.1);
-		color: #22c55e;
-		box-shadow: 0 0 12px rgba(34, 197, 94, 0.3);
-	}
-	.pin-box {
-		width: 56px;
-		height: 64px;
-		border-radius: 14px;
-		border: 1.5px solid rgba(255, 255, 255, 0.12);
-		background: rgba(255, 255, 255, 0.05);
-		color: #f1f5f9;
-		font-size: 1.5rem;
-		font-weight: 700;
-		text-align: center;
-		outline: none;
-		caret-color: transparent;
-		transition:
-			border-color 0.2s,
-			background 0.2s,
-			box-shadow 0.2s,
-			transform 0.15s;
-		-webkit-text-security: disc;
-		font-family: inherit;
-	}
-	.pin-box:disabled {
-		opacity: 0.5;
-		cursor: not-allowed;
-	}
-	.pin-box:focus:not(:disabled) {
-		border-color: #6366f1;
-		background: rgba(99, 102, 241, 0.08);
-		box-shadow:
-			0 0 0 3px rgba(99, 102, 241, 0.2),
-			0 4px 12px rgba(0, 0, 0, 0.3);
-		transform: translateY(-2px);
-	}
-	.pin-box.filled {
-		border-color: rgba(99, 102, 241, 0.5);
-		background: rgba(99, 102, 241, 0.06);
-	}
-
-	/* ── Hint text ────────────────────────────────────── */
-	.hint {
-		text-align: center;
-		font-size: 0.8125rem;
-		min-height: 20px;
-		margin: 0;
-	}
-	.hint-neutral {
-		color: #475569;
-	}
-	.hint-loading {
-		color: #818cf8;
-	}
-	.hint-error {
-		color: #f87171;
-		animation: fadein 0.2s ease;
-	}
-	.hint-success {
-		color: #22c55e;
-		animation: fadein 0.2s ease;
-	}
-
-	@keyframes fadein {
-		from {
-			opacity: 0;
-			transform: translateY(4px);
-		}
-		to {
-			opacity: 1;
-			transform: translateY(0);
-		}
-	}
-
-	/* ── Footer ───────────────────────────────────────── */
-	.footer-note {
-		position: relative;
-		z-index: 10;
-		margin-top: 28px;
-		font-size: 0.75rem;
-		color: #334155;
-		letter-spacing: 0.04em;
-	}
-
-	/* ── Authenticated state ──────────────────────────── */
-	.authenticated {
-		min-height: 100vh;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		background: #090c14;
-		font-family: 'Inter', system-ui, sans-serif;
-	}
-	.auth-content {
-		text-align: center;
-		animation: fadein 0.5s ease;
-	}
-	.checkmark {
-		font-size: 3rem;
-		color: #22c55e;
-		margin-bottom: 16px;
-		animation: pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-	}
-	@keyframes pop {
-		from {
-			transform: scale(0);
-			opacity: 0;
-		}
-		to {
-			transform: scale(1);
-			opacity: 1;
-		}
-	}
-	.auth-content h1 {
-		font-size: 2rem;
-		font-weight: 700;
-		color: #f1f5f9;
-		letter-spacing: -0.02em;
-		margin: 0 0 8px;
-	}
-	.auth-content .sub {
-		color: #64748b;
-		font-size: 0.9375rem;
-		margin: 0 0 32px;
-	}
-	.btn-enter {
-		display: inline-block;
-		padding: 12px 32px;
-		background: linear-gradient(135deg, #6366f1, #8b5cf6);
-		color: white;
-		border-radius: 12px;
-		font-weight: 600;
-		font-size: 0.9375rem;
-		text-decoration: none;
-		box-shadow: 0 8px 24px rgba(99, 102, 241, 0.4);
-		transition:
-			transform 0.15s ease,
-			box-shadow 0.15s ease;
-	}
-	.btn-enter:hover {
-		transform: translateY(-2px);
-		box-shadow: 0 12px 32px rgba(99, 102, 241, 0.5);
-	}
-
-	/* ── Responsive ───────────────────────────────────── */
 	@media (max-width: 400px) {
-		.card-inner {
-			padding: 36px 20px 32px;
-		}
 		.pin-box {
 			width: 42px;
 			height: 52px;
 			font-size: 1.25rem;
-		}
-		.pin-wrap {
-			gap: 6px;
 		}
 	}
 </style>
