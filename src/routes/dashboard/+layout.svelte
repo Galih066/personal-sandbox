@@ -1,5 +1,7 @@
 <script lang="ts">
 	import { page } from '$app/stores';
+	import { goto } from '$app/navigation';
+	import { PUBLIC_SESSION_KEY } from '$env/static/public';
 
 	let { children } = $props();
 
@@ -41,6 +43,12 @@
 
 	function closeMobile() {
 		mobileOpen = false;
+	}
+
+	function logout() {
+		sessionStorage.removeItem(PUBLIC_SESSION_KEY);
+		sessionStorage.removeItem('psb_token');
+		goto('/');
 	}
 </script>
 
@@ -116,11 +124,9 @@
 			</ul>
 		</nav>
 
-		<!-- User profile -->
-		<div class="border-t border-white/[0.06] p-3">
-			<div
-				class="flex cursor-pointer items-center gap-3 rounded-lg px-2 py-2.5 transition-colors duration-150 hover:bg-white/[0.04]"
-			>
+		<!-- User profile + logout -->
+		<div class="space-y-1 border-t border-white/[0.06] p-3">
+			<div class="flex items-center gap-3 rounded-lg px-2 py-2.5">
 				<div
 					class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white"
 					style="background: linear-gradient(135deg, #6366f1, #8b5cf6);"
@@ -131,21 +137,26 @@
 					<p class="truncate text-xs font-semibold text-slate-200">Galih Dapaim.</p>
 					<p class="truncate text-[0.65rem] text-slate-500">Personal</p>
 				</div>
+			</div>
+			<button
+				onclick={logout}
+				class="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-slate-500 transition-colors duration-150 hover:bg-red-500/10 hover:text-red-400"
+			>
 				<svg
-					class="h-4 w-4 shrink-0 text-slate-500"
+					class="h-4 w-4 shrink-0"
 					viewBox="0 0 24 24"
 					fill="none"
 					stroke="currentColor"
 					stroke-width="2"
 					stroke-linecap="round"
+					stroke-linejoin="round"
 				>
-					<circle cx="12" cy="12" r="1" /><circle cx="12" cy="5" r="1" /><circle
-						cx="12"
-						cy="19"
-						r="1"
-					/>
+					<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+					<polyline points="16 17 21 12 16 7" />
+					<line x1="21" y1="12" x2="9" y2="12" />
 				</svg>
-			</div>
+				Sign out
+			</button>
 		</div>
 	</aside>
 
@@ -231,6 +242,7 @@
 				<!-- Notifications -->
 				<button
 					class="relative flex h-9 w-9 items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-white/[0.06] hover:text-slate-100"
+					aria-label="Notifications"
 				>
 					<svg
 						class="h-4.5 w-4.5"
