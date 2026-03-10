@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { goto } from '$app/navigation';
 	import { PUBLIC_API_BASE_URL, PUBLIC_EMAIL, PUBLIC_SESSION_KEY } from '$env/static/public';
 
 	const EMAIL = PUBLIC_EMAIL;
@@ -8,7 +9,6 @@
 
 	let digits = $state<string[]>(Array(6).fill(''));
 	let inputRefs: HTMLInputElement[] = [];
-	let isAuthenticated = $state(false);
 	let shaking = $state(false);
 	let success = $state(false);
 	let loading = $state(false);
@@ -16,7 +16,7 @@
 	let errorMsg = $state('');
 
 	onMount(() => {
-		if (sessionStorage.getItem(SESSION_KEY) === 'true') isAuthenticated = true;
+		if (sessionStorage.getItem(SESSION_KEY) === 'true') goto('/dashboard');
 		mounted = true;
 		setTimeout(() => inputRefs[0]?.focus(), 100);
 	});
@@ -69,7 +69,7 @@
 				if (data?.data?.token) sessionStorage.setItem('psb_token', data.data.token);
 				sessionStorage.setItem(SESSION_KEY, 'true');
 				success = true;
-				setTimeout(() => (isAuthenticated = true), 800);
+				setTimeout(() => goto('/dashboard'), 600);
 			} else {
 				triggerError(data?.message ?? 'Incorrect PIN, try again');
 			}
@@ -94,29 +94,6 @@
 
 {#if !mounted}
 	<!-- prevent flash -->
-{:else if isAuthenticated}
-	<!-- ── Authenticated ───────────────────────────── -->
-	<div
-		class="flex min-h-screen items-center justify-center bg-[#090c14]"
-		style="font-family: 'Inter', system-ui, sans-serif;"
-	>
-		<div class="text-center" style="animation: fadein 0.5s ease;">
-			<div
-				class="mb-4 text-5xl text-green-400"
-				style="animation: pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);"
-			>
-				✓
-			</div>
-			<h1 class="mb-2 text-[2rem] font-bold tracking-tight text-slate-100">Welcome back, sir!</h1>
-			<p class="mb-8 text-[0.9375rem] text-slate-500">You're in. The sandbox is yours.</p>
-			<a
-				href="/dashboard"
-				class="inline-block rounded-xl px-8 py-3 text-[0.9375rem] font-semibold text-white no-underline transition-all duration-150 hover:-translate-y-0.5"
-				style="background: linear-gradient(135deg, #6366f1, #8b5cf6); box-shadow: 0 8px 24px rgba(99,102,241,0.4);"
-				>Enter ↗</a
-			>
-		</div>
-	</div>
 {:else}
 	<!-- ── Login page ───────────────────────────────── -->
 	<div
